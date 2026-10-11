@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bloco de Notas</title>
+    <meta name="theme-color" content="#3498db">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .editor-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+            width: 90%;
+            max-width: 900px;
+            padding: 16px 16px 24px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        h1 {
+            font-size: 1.4rem;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 4px;
+        }
+        h1 small {
+            font-size: 0.8rem;
+            font-weight: normal;
+            color: #7f8c8d;
+            margin-left: auto;
+        }
+        .menu-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid #ecf0f1;
+            padding-bottom: 8px;
+            flex-wrap: wrap;
+        }
+        .menu-bar .menu {
+            position: relative;
+            display: inline-block;
+        }
+        .menu-bar .menu > button {
+            background: transparent;
+            border: none;
+            padding: 6px 12px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background 0.2s;
+            font-weight: 500;
+            color: #2c3e50;
+        }
+        .menu-bar .menu > button:hover {
+            background: #ecf0f1;
+        }
+        .menu-bar .menu .dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: white;
+            border: 1px solid #dce1e6;
+            border-radius: 6px;
+            min-width: 200px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 100;
+            padding: 4px 0;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .menu-bar .menu .dropdown.show {
+            display: block;
+        }
+        .menu-bar .menu .dropdown button {
+            display: block;
+            width: 100%;
+            background: transparent;
+            border: none;
+            padding: 8px 16px;
+            text-align: left;
+            font-size: 0.9rem;
+            cursor: pointer;
+            color: #2c3e50;
+            transition: background 0.1s;
+        }
+        .menu-bar .menu .dropdown button:hover {
+            background: #f0f4f8;
+        }
+        .menu-bar .menu .dropdown .separator {
+            height: 1px;
+            background: #ecf0f1;
+            margin: 4px 8px;
+        }
+        .menu-bar .menu .dropdown .shortcut {
+            float: right;
+            color: #7f8c8d;
+            font-size: 0.8rem;
+            margin-left: 20px;
+        }
+        .menu-bar .menu .dropdown .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .menu-bar .menu .dropdown .history-item .filename {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 150px;
+        }
+        .menu-bar .menu .dropdown .history-item .badge {
+            background: #ecf0f1;
+            padding: 0 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            color: #7f8c8d;
+        }
+        .menu-bar .menu .dropdown .history-empty {
+            padding: 8px 16px;
+            color: #bdc3c7;
+            font-style: italic;
+            font-size: 0.9rem;
+        }
+        .menu-bar .btn-run {
+            background: #2ecc71;
+            color: white;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .menu-bar .btn-run:hover {
+            background: #27ae60;
+        }
+        .menu-bar .btn-exit {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .menu-bar .btn-exit:hover {
+            background: #c0392b;
+        }
+        .menu-bar .spacer {
+            flex: 1;
+        }
+
+        textarea {
+            width: 100%;
+            height: 500px;
+            border: 1px solid #dce1e6;
+            border-radius: 8px;
+            padding: 16px;
+            font-size: 1rem;
+            font-family: 'Consolas', 'Courier New', monospace;
+            resize: vertical;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        textarea:focus {
+            border-color: #3498db;
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: #7f8c8d;
+            border-top: 1px solid #ecf0f1;
+            padding-top: 10px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .status-bar span {
+            background: #f8f9fa;
+            padding: 2px 10px;
+            border-radius: 12px;
+        }
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .file-info .filename {
+            font-weight: 600;
+            color: #2c3e50;
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .file-info .saved-indicator {
+            color: #27ae60;
+            font-size: 0.8rem;
+        }
+        .file-info .unsaved-indicator {
+            color: #e67e22;
+            font-size: 0.8rem;
+        }
+
+        @media (display-mode: standalone) {
+            body {
+                background: #f5f5f5;
+            }
+            .editor-container {
+                width: 100%;
+                max-width: 100%;
+                border-radius: 0;
+                min-height: 100vh;
+                padding: 10px;
+            }
+            textarea {
+                height: calc(100vh - 220px);
+            }
+        }
+        @media (max-width: 600px) {
+            .editor-container {
+                padding: 10px;
+            }
+            textarea {
+                height: 300px;
+            }
+            .menu-bar .menu > button {
+                font-size: 0.85rem;
+                padding: 4px 8px;
+            }
+            .menu-bar .btn-run, .menu-bar .btn-exit {
+                font-size: 0.8rem;
+                padding: 4px 10px;
+            }
+            h1 {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="editor-container">
+        <h1>
+            📝 Bloco de Notas
+            <small id="wordCount">0 palavras · 0 caracteres</small>
+        </h1>
+
+        <div class="menu-bar">
+            <div class="menu" id="menuFile">
+                <button>Arquivo</button>
+                <div class="dropdown" id="dropdownFile">
+                    <button data-action="new">Novo <span class="shortcut">Ctrl+N</span></button>
+                    <button data-action="open">Abrir <span class="shortcut">Ctrl+O</span></button>
+                    <button data-action="save">Salvar <span class="shortcut">Ctrl+S</span></button>
+                    <button data-action="saveAs">Salvar como</button>
+                    <div class="separator"></div>
+                    <div id="historyContainer"></div>
+                    <button data-action="clearHistory">Limpar histórico</button>
+                    <div class="separator"></div>
+                    <button data-action="exit" style="color:#e74c3c;">Sair</button>
+                </div>
+            </div>
+
+            <div class="menu" id="menuEdit">
+                <button>Editar</button>
+                <div class="dropdown" id="dropdownEdit">
+                    <button data-action="selectAll">Selecionar tudo <span class="shortcut">Ctrl+A</span></button>
+                    <button data-action="copy">Copiar <span class="shortcut">Ctrl+C</span></button>
+                    <button data-action="paste">Colar <span class="shortcut">Ctrl+V</span></button>
+                </div>
+            </div>
+
+            <span class="spacer"></span>
+
+            <button class="btn-run" id="btnRunHtml">▶️ Executar HTML</button>
+            <button class="btn-exit" id="btnExit">✕ Sair</button>
+        </div>
+
+        <textarea id="textEditor" placeholder="Digite seu texto aqui..."></textarea>
+
+        <div class="status-bar">
+            <div class="file-info">
+                <span>📄</span>
+                <span class="filename" id="fileName">Sem título</span>
+                <span id="saveStatus" class="saved-indicator">● Salvo</span>
+            </div>
+            <div>
+                <span id="lineCount">Linhas: 1</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            // =====================================================
+            // 1. INJEÇÃO DO MANIFEST E SERVICE WORKER (PWA)
+            // =====================================================
+            (function injectManifest() {
+                const manifest = {
+                    name: "Bloco de Notas",
+                    short_name: "Bloco Notas",
+                    description: "Editor de texto simples",
+                    start_url: window.location.href.split('?')[0],
+                    display: "standalone",
+                    background_color: "#f5f5f5",
+                    theme_color: "#3498db",
+                    orientation: "portrait",
+                    icons: [
+                        {
+                            src: "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192"><rect width="192" height="192" rx="36" fill="#3498db"/><text x="96" y="120" font-size="100" text-anchor="middle" fill="white">📝</text></svg>'),
+                            sizes: "192x192",
+                            type: "image/svg+xml",
+                            purpose: "any maskable"
+                        },
+                        {
+                            src: "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="72" fill="#3498db"/><text x="256" y="330" font-size="260" text-anchor="middle" fill="white">📝</text></svg>'),
+                            sizes: "512x512",
+                            type: "image/svg+xml",
+                            purpose: "any maskable"
+                        }
+                    ]
+                };
+                const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('link');
+                link.rel = 'manifest';
+                link.href = url;
+                document.head.appendChild(link);
+            })();
+
+            (function registerServiceWorker() {
+                if ('serviceWorker' in navigator) {
+                    const swCode = `
+                        const CACHE_NAME = 'bloco-notas-v1';
+                        self.addEventListener('install', event => {
+                            event.waitUntil(
+                                caches.open(CACHE_NAME)
+                                    .then(cache => cache.addAll(['${window.location.pathname || '/'}']))
+                            );
+                        });
+                        self.addEventListener('activate', event => {
+                            event.waitUntil(
+                                caches.keys().then(cacheNames => {
+                                    return Promise.all(
+                                        cacheNames.map(cacheName => {
+                                            if (cacheName !== CACHE_NAME) {
+                                                return caches.delete(cacheName);
+                                            }
+                                        })
+                                    );
+                                })
+                            );
+                        });
+                        self.addEventListener('fetch', event => {
+                            event.respondWith(
+                                caches.match(event.request)
+                                    .then(response => response || fetch(event.request))
+                            );
+                        });
+                    `;
+                    const swBlob = new Blob([swCode], { type: 'application/javascript' });
+                    const swUrl = URL.createObjectURL(swBlob);
+                    navigator.serviceWorker.register(swUrl)
+                        .then(() => console.log('Service Worker registrado!'))
+                        .catch(err => console.log('Service Worker falhou:', err));
+                }
+            })();
+
+            // =====================================================
+            // 2. ESTADO ÚNICO (SEM ABAS)
+            // =====================================================
+            const editor = document.getElementById('textEditor');
+            const fileNameSpan = document.getElementById('fileName');
+            const saveStatus = document.getElementById('saveStatus');
+            const wordCountSpan = document.getElementById('wordCount');
+            const lineCountSpan = document.getElementById('lineCount');
+            const historyContainer = document.getElementById('historyContainer');
+
+            let currentFileHandle = null;
+            let currentFileName = 'Sem título';
+            let isSaved = true;
+            let isNewFile = true;
+            let history = [];
+            let fileHandles = {};
+
+            const supportsFileSystem = 'showDirectoryPicker' in window && 'showOpenFilePicker' in window;
+
+            // ====== HISTÓRICO ======
+            function loadHistory() {
+                try {
+                    const data = localStorage.getItem('notepad_history');
+                    if (data) {
+                        history = JSON.parse(data);
+                        if (!Array.isArray(history)) history = [];
+                    }
+                } catch (_) { history = []; }
+                if (history.length > 10) history = history.slice(0, 10);
+            }
+
+            function saveHistory() {
+                try {
+                    localStorage.setItem('notepad_history', JSON.stringify(history));
+                } catch (_) {}
+            }
+
+            function addToHistory(filename) {
+                if (!filename || filename === 'Sem título') return;
+                history = history.filter(name => name !== filename);
+                history.unshift(filename);
+                if (history.length > 10) history.pop();
+                saveHistory();
+                renderHistory();
+            }
+
+            function clearHistory() {
+                if (history.length === 0) return;
+                if (confirm('Limpar todo o histórico de arquivos?')) {
+                    history = [];
+                    saveHistory();
+                    renderHistory();
+                }
+            }
+
+            function renderHistory() {
+                historyContainer.innerHTML = '';
+                if (history.length === 0) {
+                    const empty = document.createElement('div');
+                    empty.className = 'history-empty';
+                    empty.textContent = 'Nenhum arquivo recente';
+                    historyContainer.appendChild(empty);
+                    return;
+                }
+                history.forEach((name, index) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'history-item';
+                    btn.innerHTML = `
+                        <span class="filename">${name}</span>
+                        <span class="badge">#${index + 1}</span>
+                    `;
+                    btn.title = `Abrir "${name}"`;
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('show'));
+                        openHistoryFile(name);
+                    });
+                    historyContainer.appendChild(btn);
+                });
+            }
+
+            // ====== PERMISSÃO ======
+            async function verifyPermission(fileHandle, readWrite) {
+                const options = {};
+                if (readWrite) {
+                    options.mode = 'readwrite';
+                }
+                if (await fileHandle.queryPermission(options) === 'granted') {
+                    return true;
+                }
+                if (await fileHandle.requestPermission(options) === 'granted') {
+                    return true;
+                }
+                return false;
+            }
+
+            // ====== ABRIR ARQUIVO (SEM PERGUNTAR) ======
+            async function openHistoryFile(filename) {
+                if (fileHandles[filename]) {
+                    try {
+                        const handle = fileHandles[filename];
+                        const hasPermission = await verifyPermission(handle, false);
+                        if (hasPermission) {
+                            const file = await handle.getFile();
+                            const content = await file.text();
+                            setFile(file.name, content, handle);
+                            addToHistory(file.name);
+                            return;
+                        } else {
+                            delete fileHandles[filename];
+                            renderHistory();
+                        }
+                    } catch (err) {
+                        delete fileHandles[filename];
+                        renderHistory();
+                    }
+                }
+                await doOpenHistoryFileWithPicker(filename);
+            }
+
+            async function doOpenHistoryFileWithPicker(filename) {
+                if (!supportsFileSystem) {
+                    alert(`Selecione o arquivo "${filename}" manualmente.`);
+                    await doOpenFile();
+                    return;
+                }
+                try {
+                    const [handle] = await window.showOpenFilePicker({ multiple: false });
+                    const hasPermission = await verifyPermission(handle, true);
+                    if (!hasPermission) {
+                        alert('Permissão negada para acessar o arquivo.');
+                        return;
+                    }
+                    const file = await handle.getFile();
+                    const content = await file.text();
+                    setFile(file.name, content, handle);
+                    fileHandles[file.name] = handle;
+                    addToHistory(file.name);
+                    renderHistory();
+                } catch (err) {
+                    if (err.name !== 'AbortError' && err.name !== 'SecurityError') {
+                        console.error('Erro ao abrir:', err);
+                        alert(`Não foi possível abrir "${filename}".`);
+                    }
+                }
+            }
+
+            async function doOpenFile() {
+                try {
+                    let fileHandle;
+                    if (supportsFileSystem) {
+                        [fileHandle] = await window.showOpenFilePicker({ multiple: false });
+                        const hasPermission = await verifyPermission(fileHandle, true);
+                        if (!hasPermission) {
+                            alert('Permissão negada para acessar o arquivo.');
+                            return;
+                        }
+                    } else {
+                        const input = document.createElement('input');
+                        input.type = 'file';
+                        const file = await new Promise((resolve) => {
+                            input.onchange = (e) => resolve(e.target.files[0]);
+                            input.click();
+                        });
+                        if (!file) return;
+                        const content = await file.text();
+                        setFile(file.name, content, null);
+                        addToHistory(file.name);
+                        return;
+                    }
+                    const file = await fileHandle.getFile();
+                    const content = await file.text();
+                    setFile(file.name, content, fileHandle);
+                    fileHandles[file.name] = fileHandle;
+                    addToHistory(file.name);
+                    renderHistory();
+                } catch (err) {
+                    if (err.name !== 'AbortError' && err.name !== 'SecurityError') {
+                        console.error('Erro ao abrir:', err);
+                        alert('Não foi possível abrir o arquivo.');
+                    }
+                }
+            }
+
+            // ====== FUNÇÕES AUXILIARES ======
+            function setFile(filename, content, fileHandle) {
+                editor.value = content;
+                currentFileName = filename;
+                currentFileHandle = fileHandle;
+                isSaved = true;
+                isNewFile = (fileHandle === null);
+                updateUI();
+                updateCounters();
+            }
+
+            function updateUI() {
+                fileNameSpan.textContent = currentFileName;
+                if (isSaved) {
+                    saveStatus.textContent = '● Salvo';
+                    saveStatus.className = 'saved-indicator';
+                } else {
+                    saveStatus.textContent = '● Não salvo';
+                    saveStatus.className = 'unsaved-indicator';
+                }
+            }
+
+            function updateCounters() {
+                const text = editor.value;
+                const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+                const chars = text.length;
+                const lines = text.split('\n').length;
+                wordCountSpan.textContent = `${words} palavras · ${chars} caracteres`;
+                lineCountSpan.textContent = `Linhas: ${lines}`;
+            }
+
+            function markUnsaved() {
+                if (isSaved) {
+                    isSaved = false;
+                    updateUI();
+                }
+            }
+
+            // ====== AÇÕES ======
+            function newFile() {
+                editor.value = '';
+                currentFileHandle = null;
+                currentFileName = 'Sem título';
+                isSaved = true;
+                isNewFile = true;
+                updateUI();
+                updateCounters();
+                editor.focus();
+            }
+
+            async function openFile() {
+                await doOpenFile();
+            }
+
+            async function saveFile() {
+                if (!supportsFileSystem) {
+                    await saveAsFile();
+                    return;
+                }
+                if (!currentFileHandle || isNewFile) {
+                    await saveAsFile();
+                    return;
+                }
+                try {
+                    const hasPermission = await verifyPermission(currentFileHandle, true);
+                    if (!hasPermission) {
+                        alert('Permissão negada para salvar. Tente Salvar como.');
+                        await saveAsFile();
+                        return;
+                    }
+                    const writable = await currentFileHandle.createWritable();
+                    await writable.write(editor.value);
+                    await writable.close();
+                    isSaved = true;
+                    const file = await currentFileHandle.getFile();
+                    currentFileName = file.name;
+                    isNewFile = false;
+                    updateUI();
+                    addToHistory(currentFileName);
+                    fileHandles[currentFileName] = currentFileHandle;
+                    renderHistory();
+                } catch (err) {
+                    console.error('Erro ao salvar:', err);
+                    alert('Erro ao salvar o arquivo. Tente Salvar como.');
+                }
+            }
+
+            async function saveAsFile() {
+                const content = editor.value;
+                if (!content.trim()) {
+                    alert('O texto está vazio. Nada para salvar.');
+                    return;
+                }
+                if (supportsFileSystem) {
+                    try {
+                        let suggested = currentFileName !== 'Sem título' ? currentFileName : 'documento';
+                        if (!suggested.includes('.')) {
+                            suggested += '.txt';
+                        }
+                        const handle = await window.showSaveFilePicker({ suggestedName: suggested });
+                        const hasPermission = await verifyPermission(handle, true);
+                        if (!hasPermission) {
+                            alert('Permissão negada para salvar.');
+                            return;
+                        }
+                        const writable = await handle.createWritable();
+                        await writable.write(content);
+                        await writable.close();
+                        const file = await handle.getFile();
+                        currentFileHandle = handle;
+                        currentFileName = file.name;
+                        isSaved = true;
+                        isNewFile = false;
+                        fileHandles[file.name] = handle;
+                        updateUI();
+                        addToHistory(file.name);
+                        renderHistory();
+                    } catch (err) {
+                        if (err.name !== 'AbortError' && err.name !== 'SecurityError') {
+                            console.error('Erro ao salvar como:', err);
+                            alert('Erro ao salvar o arquivo.');
+                        }
+                    }
+                } else {
+                    let filename = currentFileName !== 'Sem título' ? currentFileName : 'documento';
+                    if (!filename.includes('.')) {
+                        filename += '.txt';
+                    }
+                    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    isSaved = true;
+                    updateUI();
+                    addToHistory(filename);
+                }
+            }
+
+            function exitApp() {
+                window.close();
+                setTimeout(() => {
+                    alert('Clique em "Sair" novamente ou feche a janela manualmente.');
+                }, 100);
+            }
+
+            function runAsHtml() {
+                const content = editor.value;
+                if (!content.trim()) {
+                    alert('O conteúdo está vazio. Nada para executar.');
+                    return;
+                }
+                const blob = new Blob([content], { type: 'text/html;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                window.open(url, '_blank');
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+            }
+
+            // ====== EVENTOS ======
+            editor.addEventListener('input', () => {
+                updateCounters();
+                if (isSaved) markUnsaved();
+            });
+
+            // ====== ATALHOS ======
+            document.addEventListener('keydown', (e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                    e.preventDefault();
+                    saveFile();
+                }
+                if ((e.ctrlKey || e.metaKey) && e.key === 'o') {
+                    e.preventDefault();
+                    openFile();
+                }
+                if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+                    e.preventDefault();
+                    newFile();
+                }
+            });
+
+            // ====== MENU ======
+            function setupMenu(menuId, dropdownId) {
+                const menu = document.getElementById(menuId);
+                const dropdown = document.getElementById(dropdownId);
+                menu.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    document.querySelectorAll('.dropdown').forEach(d => {
+                        if (d.id !== dropdownId) d.classList.remove('show');
+                    });
+                    dropdown.classList.toggle('show');
+                });
+                document.addEventListener('click', () => {
+                    dropdown.classList.remove('show');
+                });
+                dropdown.addEventListener('click', (e) => e.stopPropagation());
+            }
+
+            setupMenu('menuFile', 'dropdownFile');
+            setupMenu('menuEdit', 'dropdownEdit');
+
+            document.querySelectorAll('[data-action]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const action = e.currentTarget.dataset.action;
+                    switch (action) {
+                        case 'new': newFile(); break;
+                        case 'open': openFile(); break;
+                        case 'save': saveFile(); break;
+                        case 'saveAs': saveAsFile(); break;
+                        case 'clearHistory': clearHistory(); break;
+                        case 'exit': exitApp(); break;
+                        case 'selectAll': editor.select(); editor.focus(); break;
+                        case 'copy':
+                            editor.select();
+                            document.execCommand('copy');
+                            editor.setSelectionRange(0, 0);
+                            editor.focus();
+                            break;
+                        case 'paste':
+                            (async () => {
+                                try {
+                                    const text = await navigator.clipboard.readText();
+                                    const start = editor.selectionStart;
+                                    const end = editor.selectionEnd;
+                                    const before = editor.value.substring(0, start);
+                                    const after = editor.value.substring(end);
+                                    editor.value = before + text + after;
+                                    editor.selectionStart = editor.selectionEnd = start + text.length;
+                                    editor.focus();
+                                    editor.dispatchEvent(new Event('input'));
+                                } catch (_) {
+                                    editor.focus();
+                                    document.execCommand('paste');
+                                }
+                            })();
+                            break;
+                    }
+                    document.querySelectorAll('.dropdown').forEach(d => d.classList.remove('show'));
+                });
+            });
+
+            document.getElementById('btnRunHtml').addEventListener('click', runAsHtml);
+            document.getElementById('btnExit').addEventListener('click', exitApp);
+
+            // =====================================================
+            // 3. ANDROID: SETA VOLTAR NÃO FAZ NADA
+            // =====================================================
+            window.addEventListener('load', () => {
+                if (window.history && window.history.pushState) {
+                    window.history.pushState({ page: 1 }, null, '');
+                }
+            });
+
+            window.addEventListener('popstate', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (window.history && window.history.pushState) {
+                    window.history.pushState({ page: 1 }, null, '');
+                }
+            });
+
+            // ====== INICIALIZAÇÃO ======
+            loadHistory();
+            renderHistory();
+            newFile(); // inicia com documento em branco
+
+            if (!supportsFileSystem) {
+                const status = document.querySelector('.status-bar');
+                const hint = document.createElement('span');
+                hint.textContent = '⚠️ Salvar usando download';
+                hint.style.color = '#e67e22';
+                hint.style.fontSize = '0.8rem';
+                status.appendChild(hint);
+            }
+
+            if (window.matchMedia('(display-mode: standalone)').matches) {
+                console.log('App rodando como PWA');
+            }
+        })();
+    </script>
+</body>
+</html>
